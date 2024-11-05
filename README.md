@@ -127,10 +127,7 @@ Esto generará un archivo `datosDemo.xlsx` con 100 registros de hogares y datos 
 1. **Personalización**: Puedes modificar los parámetros del modelo de datos en el código para personalizar los valores de consumo y generación.
 2. **Manejo de Errores**: El programa verifica que `openpyxl` esté instalado para la creación de archivos Excel. Si no está instalado, se mostrará un mensaje explicativo.
    
-## Autor
+## Autor (Edison Valencia Diaz)
 
 Este programa fue diseñado para proporcionar datos de ejemplo de consumo de energía y agua para proyectos de visualización y análisis de datos.
 
----
-
-Este archivo `README.md` describe detalladamente el propósito, la estructura del archivo de salida, y las instrucciones de uso del programa, así como los algoritmos y pseudocódigo de los métodos principales.
