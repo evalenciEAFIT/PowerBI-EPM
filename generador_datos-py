@@ -1,0 +1,153 @@
+# -*- coding: utf-8 -*-
+"""
+Programa para generar un conjunto de datos simulado de consumo de energía y agua en hogares,
+con características climáticas y proyecciones para ejercicios de visualización de datos.
+
+Propósito:
+Este programa genera datos de consumo y generación de energía (solar y eólica) y agua
+(agua purificada de residuos y agua recolectada de lluvias) en hogares de tres ciudades colombianas:
+Medellín, Manizales y Pereira. También incluye proyecciones de consumo bajo escenarios climáticos
+como aumento de calor, sequía prolongada y eventos de viento extremo.
+
+Modelo de Datos y Fórmulas Utilizadas:
+1. **Consumo de Energía y Agua**: Calculado en función de datos climáticos mensuales como temperatura,
+   precipitación y horas de sol. Las fórmulas ajustan el consumo de energía convencional según
+   la temperatura, y la generación de energía solar y eólica según las horas de sol y el viento promedio.
+
+2. **Agua Autogenerada**:
+   - **Purificación de Aguas Residuales**: Genera una cantidad aleatoria de agua purificada de residuos.
+   - **Recolección de Aguas Lluvias**: Depende del nivel de precipitación mensual, con ajustes en función
+     de si la lluvia es ligera, moderada o fuerte.
+
+3. **Proyecciones Climáticas**: Incluyen cambios en el consumo de energía y agua bajo diferentes escenarios
+   climáticos previstos para el año 2024.
+
+Uso del Programa:
+El usuario especifica el número de hogares a generar y el nombre del archivo Excel de salida.
+"""
+
+import pandas as pd
+import numpy as np
+
+try:
+    import openpyxl  # Verificar que openpyxl esté instalado
+except ImportError:
+    print("Error: La librería 'openpyxl' es necesaria para escribir archivos Excel (.xlsx).")
+    print("Instálala ejecutando: pip install openpyxl")
+    exit(1)
+
+# Función principal del programa
+def generar_datos_hogares(n_hogares, nombre_archivo):
+    """
+    Genera datos de consumo de energía y agua para hogares con características climáticas y de ubicación.
+    Los datos se guardarán en un archivo Excel.
+
+    Parámetros:
+    n_hogares (int): Número de hogares a generar
+    nombre_archivo (str): Nombre del archivo Excel de salida
+    """
+
+    # Configuración de datos estáticos para ciudades y ubicaciones geográficas
+    ciudades = ["Medellín", "Manizales", "Pereira"]
+    latitudes = {"Medellín": 6.2442, "Manizales": 5.0689, "Pereira": 4.8087}
+    longitudes = {"Medellín": -75.5812, "Manizales": -75.5174, "Pereira": -75.6906}
+    
+    # Configuración de tipos de autogeneración y zonas
+    tipos_zona = ["Urbana", "Suburbana"]
+    tipos_autogeneracion = ["Solar", "Solar y Eólica", "Ninguna"]
+    
+    # Generación de datos para cada hogar
+    hogares_data = {
+        "ID_Hogar": np.arange(1, n_hogares + 1),
+        "Ubicación": np.random.choice(ciudades, n_hogares),
+        "Latitud": [latitudes[city] for city in np.random.choice(ciudades, n_hogares)],
+        "Longitud": [longitudes[city] for city in np.random.choice(ciudades, n_hogares)],
+        "Tipo_Zona": np.random.choice(tipos_zona, n_hogares),
+        "Número_Habitantes": np.random.randint(1, 6, n_hogares),
+        "Área_Vivienda (m²)": np.random.randint(50, 200, n_hogares),
+        "Año_Construcción": np.random.randint(1990, 2020, n_hogares),
+        "Tipo_Autogeneración": np.random.choice(tipos_autogeneracion, n_hogares)
+    }
+    hogares_df = pd.DataFrame(hogares_data)  # Crear DataFrame de hogares
+
+    # Configuración de meses y años para los datos climáticos y de consumo
+    meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    años = [2023, 2024]
+    niveles_lluvia = ["Ligera", "Moderada", "Fuerte"]  # Niveles de lluvia
+
+    # Generación de datos climáticos para cada hogar por mes
+    clima_data = {
+        "ID_Hogar": np.repeat(hogares_data["ID_Hogar"], len(meses) * len(años)),
+        "Mes": meses * len(años) * n_hogares,
+        "Año": np.tile(np.repeat(años, len(meses)), n_hogares),
+        "Temperatura (°C)": np.random.uniform(22, 30, n_hogares * len(meses) * len(años)),
+        "Precipitacion (mm)": np.random.uniform(30, 120, n_hogares * len(meses) * len(años)),
+        "Horas_Sol (horas)": np.random.uniform(4, 8, n_hogares * len(meses) * len(años)),
+        "Viento_Promedio (km/h)": np.random.uniform(5, 20, n_hogares * len(meses) * len(años)),
+        "Nivel_Lluvia": np.random.choice(niveles_lluvia, n_hogares * len(meses) * len(años))
+    }
+    clima_df = pd.DataFrame(clima_data)  # Crear DataFrame de clima
+
+    # Generación de datos de consumo mensual basado en clima y características del hogar
+    consumo_data = {
+        "ID_Hogar": np.repeat(hogares_data["ID_Hogar"], len(meses) * len(años)),
+        "Mes": meses * len(años) * n_hogares,
+        "Año": np.tile(np.repeat(años, len(meses)), n_hogares),
+        "Energia_Convencional (kWh)": np.random.randint(100, 300, n_hogares * len(meses) * len(años)),
+        "Energia_Autogenerada_Solar (kWh)": np.random.randint(0, 80, n_hogares * len(meses) * len(años)),
+        "Energia_Autogenerada_Eolica (kWh)": np.random.randint(0, 30, n_hogares * len(meses) * len(años)),
+        "Agua_Convencional (m³)": np.random.randint(8, 20, n_hogares * len(meses) * len(años)),
+        "Agua_Purificada_Residual (m³)": np.random.uniform(1, 5, n_hogares * len(meses) * len(años)),  # Purificación de aguas residuales
+        "Agua_Recolectada_Lluvia (m³)": np.random.uniform(0, 10, n_hogares * len(meses) * len(años))  # Recolección de aguas lluvias
+    }
+    consumo_df = pd.DataFrame(consumo_data)  # Crear DataFrame de consumo
+
+    # Ajuste en el agua recolectada en función del nivel de lluvia
+    consumo_df["Agua_Recolectada_Lluvia (m³)"] += clima_df.apply(
+        lambda row: 1 if row["Nivel_Lluvia"] == "Ligera" else (3 if row["Nivel_Lluvia"] == "Moderada" else 6), axis=1
+    )
+
+    # Ajuste de consumo en función de clima
+    consumo_df["Energia_Convencional (kWh)"] += clima_df["Temperatura (°C)"] * 1.2
+    consumo_df["Energia_Autogenerada_Solar (kWh)"] += clima_df["Horas_Sol (horas)"] * 2.5
+    consumo_df["Energia_Autogenerada_Eolica (kWh)"] += clima_df["Viento_Promedio (km/h)"] * 1.5
+
+    # Crear datos de necesidades de consumo por hogar
+    necesidades_data = {
+        "ID_Hogar": np.repeat(hogares_data["ID_Hogar"], len(meses) * len(años)),
+        "Mes": meses * len(años) * n_hogares,
+        "Año": np.tile(np.repeat(años, len(meses)), n_hogares),
+        "Demanda_Energia (kWh)": np.random.randint(150, 250, n_hogares * len(meses) * len(años)),
+        "Demanda_Agua (m³)": np.random.randint(10, 20, n_hogares * len(meses) * len(años))
+    }
+    necesidades_df = pd.DataFrame(necesidades_data)  # Crear DataFrame de necesidades
+
+    # Generar proyecciones de consumo bajo distintos escenarios climáticos
+    escenarios_climaticos = ["Aumento de Calor", "Sequía Prolongada", "Eventos de Viento Extremo"]
+    proyeccion_escenarios_data = {
+        "ID_Hogar": np.repeat(hogares_data["ID_Hogar"], len(años) - 1),
+        "Año_Proyectado": [2024] * n_hogares,
+        "Escenario_Climático": np.random.choice(escenarios_climaticos, n_hogares),
+        "Energia_Convencional_Proyectada (kWh)": np.random.randint(120, 200, n_hogares),
+        "Energia_Autogenerada_Proyectada (kWh)": np.random.randint(50, 100, n_hogares),
+        "Agua_Convencional_Proyectada (m³)": np.random.randint(10, 18, n_hogares),
+        "Agua_Autogenerada_Proyectada (m³)": np.random.randint(5, 12, n_hogares)
+    }
+    proyeccion_escenarios_df = pd.DataFrame(proyeccion_escenarios_data)  # Crear DataFrame de proyecciones
+
+    # Guardar los datos generados en un archivo Excel con hojas separadas
+    with pd.ExcelWriter(f'{nombre_archivo}.xlsx') as writer:
+        hogares_df.to_excel(writer, sheet_name='Hogares', index=False)
+        consumo_df.to_excel(writer, sheet_name='Consumo_Mensual', index=False)
+        clima_df.to_excel(writer, sheet_name='Clima', index=False)
+        necesidades_df.to_excel(writer, sheet_name='Necesidades_Consumo', index=False)
+        proyeccion_escenarios_df.to_excel(writer, sheet_name='Proyeccion_Escenarios', index=False)
+
+    print(f"Archivo '{nombre_archivo}.xlsx' creado exitosamente con {n_hogares} registros de hogares.")
+
+# Ejecución interactiva del programa
+if __name__ == "__main__":
+    n_hogares = int(input("Ingrese el número de hogares a generar: "))
+    nombre_archivo = input("Ingrese el nombre del archivo de salida (sin extensión): ")
+    generar_datos_hogares(n_hogares, nombre_archivo)
